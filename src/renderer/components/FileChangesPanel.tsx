@@ -176,7 +176,7 @@ interface FileChangesPanelProps {
   taskId?: string;
   taskPath?: string;
   className?: string;
-  onOpenChanges?: (filePath?: string, taskPath?: string) => void;
+  onOpenChanges?: (filePath?: string, taskPath?: string, commitHash?: string) => void;
   gitPlatform?: GitPlatform;
 }
 
@@ -1169,97 +1169,119 @@ const FileChangesPanelComponent: React.FC<FileChangesPanelProps> = ({
                 ))
               ) : (
                 <TooltipProvider delayDuration={100}>
-                  {fileChanges.map((change) => (
-                    <div
-                      key={change.path}
-                      className={`flex cursor-pointer items-center justify-between border-b border-border/50 px-4 py-2.5 last:border-b-0 hover:bg-muted/50 ${
-                        change.isStaged ? 'bg-muted/50' : ''
-                      }`}
-                      onClick={() => onOpenChanges?.(change.path, safeTaskPath)}
-                    >
-                      <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
-                        <span className="inline-flex shrink-0 items-center justify-center text-muted-foreground">
-                          <FileIcon filename={change.path} isDirectory={false} size={16} />
-                        </span>
-                        <div className="min-w-0 flex-1 overflow-hidden">
-                          <div className="min-w-0 truncate text-sm">
-                            {renderPath(change.path, change.status)}
+                  {(() => {
+                    const staged = fileChanges.filter((f) => f.isStaged);
+                    const unstaged = fileChanges.filter((f) => !f.isStaged);
+                    const renderFileRow = (change: FileChange) => (
+                      <div
+                        key={change.path}
+                        className="flex cursor-pointer items-center justify-between border-b border-border/50 px-4 py-1.5 last:border-b-0 hover:bg-muted/50"
+                        onClick={() => onOpenChanges?.(change.path, safeTaskPath)}
+                      >
+                        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+                          <span className="inline-flex shrink-0 items-center justify-center text-muted-foreground">
+                            <FileIcon filename={change.path} isDirectory={false} size={14} />
+                          </span>
+                          <div className="min-w-0 flex-1 overflow-hidden">
+                            <div className="min-w-0 truncate text-xs">
+                              {renderPath(change.path, change.status)}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="ml-2 flex shrink-0 items-center gap-1.5">
+                          {change.status !== 'deleted' && shouldShowDiffPill(change.additions) && (
+                            <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
+                              +{formatDiffCount(change.additions)}
+                            </span>
+                          )}
+                          {change.status !== 'deleted' && shouldShowDiffPill(change.deletions) && (
+                            <span className="text-[10px] font-medium text-rose-700 dark:text-rose-300">
+                              -{formatDiffCount(change.deletions)}
+                            </span>
+                          )}
+                          <div className="flex items-center gap-0.5">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-muted-foreground hover:bg-accent hover:text-foreground"
+                                  onClick={(e) => handleFileStage(change.path, !change.isStaged, e)}
+                                  disabled={
+                                    stagingFiles.has(change.path) || revertingFiles.has(change.path)
+                                  }
+                                >
+                                  {stagingFiles.has(change.path) ? (
+                                    <Spinner size="sm" />
+                                  ) : change.isStaged ? (
+                                    <Minus className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <Plus className="h-3.5 w-3.5" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="left"
+                                className="max-w-xs border border-border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-lg"
+                              >
+                                <p className="font-medium">
+                                  {change.isStaged ? 'Unstage file' : 'Stage file for commit'}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-muted-foreground hover:bg-accent hover:text-foreground"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRestoreTarget(change.path);
+                                  }}
+                                  disabled={
+                                    stagingFiles.has(change.path) || revertingFiles.has(change.path)
+                                  }
+                                >
+                                  {revertingFiles.has(change.path) ? (
+                                    <Spinner size="sm" />
+                                  ) : (
+                                    <Undo2 className="h-3.5 w-3.5" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="left"
+                                className="max-w-xs border border-border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-lg"
+                              >
+                                <p className="font-medium">Revert file changes</p>
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
                         </div>
                       </div>
-                      <div className="ml-3 flex shrink-0 items-center gap-2">
-                        {change.status !== 'deleted' && shouldShowDiffPill(change.additions) && (
-                          <span className="rounded bg-green-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-green-900/30 dark:text-emerald-300">
-                            +{formatDiffCount(change.additions)}
-                          </span>
+                    );
+                    return (
+                      <>
+                        {staged.length > 0 && (
+                          <>
+                            <div className="flex items-center justify-between px-4 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                              Staged ({staged.length})
+                            </div>
+                            {staged.map(renderFileRow)}
+                          </>
                         )}
-                        {change.status !== 'deleted' && shouldShowDiffPill(change.deletions) && (
-                          <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[11px] font-medium text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">
-                            -{formatDiffCount(change.deletions)}
-                          </span>
+                        {unstaged.length > 0 && (
+                          <>
+                            <div className="flex items-center justify-between px-4 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                              Unstaged ({unstaged.length})
+                            </div>
+                            {unstaged.map(renderFileRow)}
+                          </>
                         )}
-                        <div className="flex items-center gap-1">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:bg-accent hover:text-foreground"
-                                onClick={(e) => handleFileStage(change.path, !change.isStaged, e)}
-                                disabled={
-                                  stagingFiles.has(change.path) || revertingFiles.has(change.path)
-                                }
-                              >
-                                {stagingFiles.has(change.path) ? (
-                                  <Spinner size="sm" />
-                                ) : change.isStaged ? (
-                                  <Minus className="h-4 w-4" />
-                                ) : (
-                                  <Plus className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent
-                              side="left"
-                              className="max-w-xs border border-border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-lg"
-                            >
-                              <p className="font-medium">
-                                {change.isStaged ? 'Unstage file' : 'Stage file for commit'}
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:bg-accent hover:text-foreground"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setRestoreTarget(change.path);
-                                }}
-                                disabled={
-                                  stagingFiles.has(change.path) || revertingFiles.has(change.path)
-                                }
-                              >
-                                {revertingFiles.has(change.path) ? (
-                                  <Spinner size="sm" />
-                                ) : (
-                                  <Undo2 className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent
-                              side="left"
-                              className="max-w-xs border border-border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-lg"
-                            >
-                              <p className="font-medium">Revert file changes</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                      </>
+                    );
+                  })()}
                 </TooltipProvider>
               )}
               {!displayLoading && displayChanges.length === 0 && (
@@ -1297,23 +1319,21 @@ const FileChangesPanelComponent: React.FC<FileChangesPanelProps> = ({
                     <div key={commit.hash}>
                       <button
                         type="button"
-                        className={`w-full border-b border-border/50 px-4 py-2 text-left hover:bg-muted/50 ${
+                        className={`w-full border-b border-border/50 px-4 py-1.5 text-left hover:bg-muted/50 ${
                           expandedCommit === commit.hash ? 'bg-muted/30' : ''
                         }`}
                         onClick={() => void handleToggleCommitFiles(commit.hash)}
                       >
                         <div className="flex items-center gap-1.5">
                           {expandedCommit === commit.hash ? (
-                            <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+                            <ChevronDown className="h-2.5 w-2.5 shrink-0 text-muted-foreground" />
                           ) : (
-                            <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                            <ChevronRight className="h-2.5 w-2.5 shrink-0 text-muted-foreground" />
                           )}
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm">{commit.subject}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {formatRelativeDate(commit.date)}
-                            </div>
-                          </div>
+                          <span className="min-w-0 flex-1 truncate text-xs">{commit.subject}</span>
+                          <span className="shrink-0 text-[10px] text-muted-foreground">
+                            {formatRelativeDate(commit.date)}
+                          </span>
                         </div>
                       </button>
                       {expandedCommit === commit.hash && (
@@ -1323,29 +1343,51 @@ const FileChangesPanelComponent: React.FC<FileChangesPanelProps> = ({
                               <Spinner size="sm" className="text-muted-foreground" />
                             </div>
                           ) : commitFiles[commit.hash]?.length ? (
-                            commitFiles[commit.hash].map((file) => (
-                              <button
-                                key={file.path}
-                                type="button"
-                                className="flex w-full items-center gap-2 px-4 py-1.5 pl-9 text-left hover:bg-muted/50"
-                                onClick={() => onOpenChanges?.(file.path, safeTaskPath)}
-                              >
-                                <FileIcon filename={file.path} isDirectory={false} size={14} />
-                                <span className="min-w-0 flex-1 truncate text-xs">
-                                  {file.path.split('/').pop()}
-                                </span>
-                                {file.additions > 0 && (
-                                  <span className="text-[10px] text-green-600 dark:text-green-400">
-                                    +{file.additions}
-                                  </span>
-                                )}
-                                {file.deletions > 0 && (
-                                  <span className="text-[10px] text-red-600 dark:text-red-400">
-                                    -{file.deletions}
-                                  </span>
-                                )}
-                              </button>
-                            ))
+                            (() => {
+                              const files = commitFiles[commit.hash];
+                              const grouped: Record<string, typeof files> = {};
+                              for (const file of files) {
+                                const lastSlash = file.path.lastIndexOf('/');
+                                const dir = lastSlash >= 0 ? file.path.slice(0, lastSlash) : '.';
+                                (grouped[dir] ??= []).push(file);
+                              }
+                              return Object.entries(grouped).map(([dir, dirFiles]) => (
+                                <div key={dir}>
+                                  <div className="px-4 py-1 pl-9 text-[10px] font-medium text-muted-foreground">
+                                    {dir}
+                                  </div>
+                                  {dirFiles.map((file) => (
+                                    <button
+                                      key={file.path}
+                                      type="button"
+                                      className="flex w-full items-center gap-2 px-4 py-1 pl-12 text-left hover:bg-muted/50"
+                                      onClick={() =>
+                                        onOpenChanges?.(file.path, safeTaskPath, commit.hash)
+                                      }
+                                    >
+                                      <FileIcon
+                                        filename={file.path}
+                                        isDirectory={false}
+                                        size={14}
+                                      />
+                                      <span className="min-w-0 flex-1 truncate text-xs">
+                                        {file.path.split('/').pop()}
+                                      </span>
+                                      {file.additions > 0 && (
+                                        <span className="text-[10px] text-green-600 dark:text-green-400">
+                                          +{file.additions}
+                                        </span>
+                                      )}
+                                      {file.deletions > 0 && (
+                                        <span className="text-[10px] text-red-600 dark:text-red-400">
+                                          -{file.deletions}
+                                        </span>
+                                      )}
+                                    </button>
+                                  ))}
+                                </div>
+                              ));
+                            })()
                           ) : (
                             <div className="px-4 py-2 pl-9 text-xs text-muted-foreground">
                               No files
