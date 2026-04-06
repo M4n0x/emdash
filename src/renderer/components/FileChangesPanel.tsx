@@ -577,6 +577,11 @@ const FileChangesPanelComponent: React.FC<FileChangesPanelProps> = ({
           if (taskPathRef.current !== taskPathAtCommit) return;
           setBranchAhead(bs?.success ? (bs?.aheadOfDefault ?? bs?.ahead ?? 0) : 0);
           setBranchDiffStats(bs?.defaultDiffStats ?? null);
+          // Force commits section to re-fetch on next open
+          setCommitsFetched(false);
+          setBranchCommits([]);
+          setCommitFiles({});
+          setExpandedCommit(null);
         } catch {
           if (taskPathRef.current === taskPathAtCommit) {
             setBranchAhead(0);
