@@ -23,6 +23,7 @@ import mistralLogo from '../../assets/images/mistral.png';
 import piLogo from '../../assets/images/pi.png';
 import autohandLogoSvg from '../../assets/images/autohand.svg?raw';
 import forgeLogoSvg from '../../assets/images/forge.svg?raw';
+import terminalLogoSvg from '../../assets/images/terminal.svg?raw';
 
 export type AgentInfo = {
   name: string;
@@ -59,4 +60,5 @@ export const agentConfig: Record<Agent, AgentInfo> = {
   charm: { name: 'Charm', logo: charmLogo, alt: 'Charm Crush', invertInDark: true },
   rovo: { name: 'Rovo Dev', logo: atlassianLogo, alt: 'Rovo Dev' },
   forge: { name: 'Forge', logo: forgeLogoSvg, alt: 'Forge CLI', isSvg: true },
+  terminal: { name: 'Terminal', logo: terminalLogoSvg, alt: 'Terminal', isSvg: true },
 };

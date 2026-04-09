@@ -35,6 +35,7 @@ describe('ensureDefaultTask', () => {
     expect(result!.path).toBe('/tmp/project');
     expect(result!.useWorktree).toBe(false);
     expect(result!.status).toBe('idle');
+    expect(result!.agentId).toBe('terminal');
     expect(result!.metadata?.isDefault).toBe(true);
     expect(result!.projectId).toBe('project-1');
   });

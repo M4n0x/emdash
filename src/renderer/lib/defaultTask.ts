@@ -40,6 +40,7 @@ export function ensureDefaultTask(params: EnsureDefaultTaskParams): Task | null 
     path: projectPath,
     status: 'idle',
     useWorktree: false,
+    agentId: 'terminal',
     metadata: { isDefault: true },
   };
 }
