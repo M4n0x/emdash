@@ -930,6 +930,7 @@ export function useTaskManagement() {
 
   const handleRenameTask = useCallback(
     async (targetProject: Project, task: Task, newName: string) => {
+      if (task.metadata?.isDefault) return;
       const oldBranch = task.branch;
       const sluggedName = newName
         .toLowerCase()
