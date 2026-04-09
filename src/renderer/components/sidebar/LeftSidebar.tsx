@@ -159,10 +159,11 @@ SortModePicker.displayName = 'SortModePicker';
 // ---------------------------------------------------------------------------
 // Sorting helpers
 // ---------------------------------------------------------------------------
-/** Apply a named sort criterion to unpinned tasks. Pinned tasks always float to top. */
+/** Apply a named sort criterion to unpinned tasks. Default task first, then pinned, then rest. */
 function applySortCriterion(tasks: Task[], mode: TaskSortMode): Task[] {
-  const pinned = tasks.filter((t) => t.metadata?.isPinned);
-  const unpinned = tasks.filter((t) => !t.metadata?.isPinned);
+  const defaultTasks = tasks.filter((t) => t.metadata?.isDefault);
+  const pinned = tasks.filter((t) => t.metadata?.isPinned && !t.metadata?.isDefault);
+  const unpinned = tasks.filter((t) => !t.metadata?.isPinned && !t.metadata?.isDefault);
 
   let sortedUnpinned: Task[];
   switch (mode) {
@@ -186,13 +187,14 @@ function applySortCriterion(tasks: Task[], mode: TaskSortMode): Task[] {
       break;
   }
 
-  return [...pinned, ...sortedUnpinned];
+  return [...defaultTasks, ...pinned, ...sortedUnpinned];
 }
 
-/** Restore a saved manual order, floating any new tasks to the top. */
+/** Restore a saved manual order, floating default task to top, then new tasks. */
 function applyManualOrder(tasks: Task[], manualOrder: string[]): Task[] {
-  const pinned = tasks.filter((t) => t.metadata?.isPinned);
-  const unpinned = tasks.filter((t) => !t.metadata?.isPinned);
+  const defaultTasks = tasks.filter((t) => t.metadata?.isDefault);
+  const pinned = tasks.filter((t) => t.metadata?.isPinned && !t.metadata?.isDefault);
+  const unpinned = tasks.filter((t) => !t.metadata?.isPinned && !t.metadata?.isDefault);
   const indexMap = new Map(manualOrder.map((id, i) => [id, i]));
   const sortedUnpinned = [...unpinned].sort((a, b) => {
     const ai = indexMap.get(a.id) ?? -1;
@@ -202,7 +204,7 @@ function applyManualOrder(tasks: Task[], manualOrder: string[]): Task[] {
     if (bi === -1) return 1;
     return ai - bi;
   });
-  return [...pinned, ...sortedUnpinned];
+  return [...defaultTasks, ...pinned, ...sortedUnpinned];
 }
 
 export const LeftSidebar: React.FC<LeftSidebarProps> = ({
