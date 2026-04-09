@@ -38,6 +38,8 @@ export interface TaskMetadata {
   } | null;
   /** Whether this task is pinned to the top of the sidebar */
   isPinned?: boolean | null;
+  /** Whether this is the auto-created default task for the project's main branch */
+  isDefault?: boolean | null;
   /** The automation that created this task (if any) */
   automationId?: string | null;
   /** PR number when this task is a PR review task */
