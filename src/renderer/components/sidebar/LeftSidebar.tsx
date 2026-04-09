@@ -538,7 +538,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                               forceMount
                               className="mt-1 min-w-0 data-[state=closed]:hidden"
                             >
-                              <div className="flex min-w-0 flex-col gap-1">
+                              <div className="ml-4 flex min-w-0 flex-col gap-1">
                                 <ReorderList
                                   as="div"
                                   axis="y"
