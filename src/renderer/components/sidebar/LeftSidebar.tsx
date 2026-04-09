@@ -565,15 +565,29 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                                       >
                                         <TaskItem
                                           task={typedTask}
-                                          showDelete={true}
+                                          showDelete={!typedTask.metadata?.isDefault}
                                           showDirectBadge={false}
                                           isPinned={!!typedTask.metadata?.isPinned}
-                                          onPin={() => handlePinTask(typedTask)}
-                                          onRename={(n) =>
-                                            onRenameTask?.(typedProject, typedTask, n)
+                                          onPin={
+                                            typedTask.metadata?.isDefault
+                                              ? undefined
+                                              : () => handlePinTask(typedTask)
                                           }
-                                          onDelete={() => handleDeleteTask(typedProject, typedTask)}
-                                          onArchive={() => onArchiveTask?.(typedProject, typedTask)}
+                                          onRename={
+                                            typedTask.metadata?.isDefault
+                                              ? undefined
+                                              : (n) => onRenameTask?.(typedProject, typedTask, n)
+                                          }
+                                          onDelete={
+                                            typedTask.metadata?.isDefault
+                                              ? undefined
+                                              : () => handleDeleteTask(typedProject, typedTask)
+                                          }
+                                          onArchive={
+                                            typedTask.metadata?.isDefault
+                                              ? undefined
+                                              : () => onArchiveTask?.(typedProject, typedTask)
+                                          }
                                           primaryAction={taskHoverAction}
                                           gitPlatform={typedProject.gitPlatform}
                                         />
