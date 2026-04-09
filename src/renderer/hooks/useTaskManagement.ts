@@ -672,6 +672,7 @@ export function useTaskManagement() {
       task: Task,
       options?: { silent?: boolean }
     ): Promise<boolean> => {
+      if (task.metadata?.isDefault) return false;
       if (deletingTaskIdsRef.current.has(task.id)) {
         toast({
           title: 'Deletion in progress',
@@ -760,6 +761,7 @@ export function useTaskManagement() {
       task: Task,
       options?: { silent?: boolean }
     ): Promise<boolean> => {
+      if (task.metadata?.isDefault) return false;
       if (archivingTaskIdsRef.current.has(task.id)) return false;
       try {
         await archiveTaskMutation.mutateAsync({ project: targetProject, task, options });
