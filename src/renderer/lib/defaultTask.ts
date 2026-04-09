@@ -28,7 +28,6 @@ export function ensureDefaultTask(params: EnsureDefaultTaskParams): Task | null 
     return {
       ...existing,
       branch: defaultBranch,
-      name: defaultBranch,
     };
   }
 
@@ -36,7 +35,7 @@ export function ensureDefaultTask(params: EnsureDefaultTaskParams): Task | null 
   return {
     id: `default-${projectId}`,
     projectId,
-    name: defaultBranch,
+    name: 'local',
     branch: defaultBranch,
     path: projectPath,
     status: 'idle',

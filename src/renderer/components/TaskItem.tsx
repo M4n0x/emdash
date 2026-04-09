@@ -1,6 +1,15 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { GitPlatform } from '../../shared/git/platform';
-import { ArrowUpRight, AlertCircle, Archive, Pencil, Pin, PinOff, Trash2 } from 'lucide-react';
+import {
+  ArrowUpRight,
+  AlertCircle,
+  Archive,
+  Monitor,
+  Pencil,
+  Pin,
+  PinOff,
+  Trash2,
+} from 'lucide-react';
 import { useTaskChanges } from '../hooks/useTaskChanges';
 import { ChangesBadge } from './TaskChanges';
 import { usePrStatus } from '../hooks/usePrStatus';
@@ -51,6 +60,7 @@ interface Task {
   agentId?: string;
   useWorktree?: boolean;
   updatedAt?: string;
+  metadata?: { isDefault?: boolean | null } | null;
 }
 
 interface TaskItemProps {
@@ -196,7 +206,11 @@ export const TaskItem: React.FC<TaskItemProps> = ({
         <div
           className={`absolute inset-0 flex items-center justify-center transition-opacity ${showDelete && (onDelete || onArchive) && !isDeleting ? 'group-hover/task:opacity-0' : ''}`}
         >
-          <TaskStatusIndicator status={displayStatus} unread={taskUnread} />
+          {task.metadata?.isDefault ? (
+            <Monitor className="h-3.5 w-3.5 text-muted-foreground" />
+          ) : (
+            <TaskStatusIndicator status={displayStatus} unread={taskUnread} />
+          )}
         </div>
         {showDelete && onDelete && primaryAction === 'delete' ? (
           <div className="absolute inset-0 flex items-center justify-center">

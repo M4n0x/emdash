@@ -30,7 +30,7 @@ describe('ensureDefaultTask', () => {
 
     expect(result).not.toBeNull();
     expect(result!.id).toMatch(/^default-project-1$/);
-    expect(result!.name).toBe('main');
+    expect(result!.name).toBe('local');
     expect(result!.branch).toBe('main');
     expect(result!.path).toBe('/tmp/project');
     expect(result!.useWorktree).toBe(false);
@@ -62,7 +62,7 @@ describe('ensureDefaultTask', () => {
       id: 'default-project-1',
       metadata: { isDefault: true },
       branch: 'master',
-      name: 'master',
+      name: 'local',
     });
 
     const result = ensureDefaultTask({
@@ -74,7 +74,7 @@ describe('ensureDefaultTask', () => {
 
     expect(result).not.toBeNull();
     expect(result!.id).toBe('default-project-1');
-    expect(result!.name).toBe('main');
+    expect(result!.name).toBe('local');
     expect(result!.branch).toBe('main');
     expect(result!.metadata?.isDefault).toBe(true);
   });
