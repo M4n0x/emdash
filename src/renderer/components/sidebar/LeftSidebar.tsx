@@ -550,48 +550,57 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                                   itemClassName="min-w-0"
                                   getKey={(t) => (t as Task).id}
                                 >
-                                  {(task) => {
+                                  {(task, index) => {
                                     const typedTask = task as Task;
                                     const isActive = activeTask?.id === typedTask.id;
+                                    const isDefault = !!typedTask.metadata?.isDefault;
+                                    const nextTask = displayTasks[index + 1] as Task | undefined;
+                                    const showDivider =
+                                      isDefault && nextTask && !nextTask.metadata?.isDefault;
                                     return (
-                                      <motion.div
-                                        whileTap={{ scale: 0.97 }}
-                                        onClick={() =>
-                                          handleNavigationWithCloseSettings(() =>
-                                            onSelectTask?.(typedTask)
-                                          )
-                                        }
-                                        className={`group/task min-w-0 rounded-md py-1.5 pl-1 pr-2 hover:bg-accent ${isActive ? 'bg-black/[0.06] dark:bg-white/[0.08]' : ''}`}
-                                      >
-                                        <TaskItem
-                                          task={typedTask}
-                                          showDelete={!typedTask.metadata?.isDefault}
-                                          showDirectBadge={false}
-                                          isPinned={!!typedTask.metadata?.isPinned}
-                                          onPin={
-                                            typedTask.metadata?.isDefault
-                                              ? undefined
-                                              : () => handlePinTask(typedTask)
+                                      <div>
+                                        <motion.div
+                                          whileTap={{ scale: 0.97 }}
+                                          onClick={() =>
+                                            handleNavigationWithCloseSettings(() =>
+                                              onSelectTask?.(typedTask)
+                                            )
                                           }
-                                          onRename={
-                                            typedTask.metadata?.isDefault
-                                              ? undefined
-                                              : (n) => onRenameTask?.(typedProject, typedTask, n)
-                                          }
-                                          onDelete={
-                                            typedTask.metadata?.isDefault
-                                              ? undefined
-                                              : () => handleDeleteTask(typedProject, typedTask)
-                                          }
-                                          onArchive={
-                                            typedTask.metadata?.isDefault
-                                              ? undefined
-                                              : () => onArchiveTask?.(typedProject, typedTask)
-                                          }
-                                          primaryAction={taskHoverAction}
-                                          gitPlatform={typedProject.gitPlatform}
-                                        />
-                                      </motion.div>
+                                          className={`group/task min-w-0 rounded-md py-1.5 pl-1 pr-2 hover:bg-accent ${isDefault && !isActive ? 'bg-black/[0.03] dark:bg-white/[0.04]' : ''} ${isActive ? 'bg-black/[0.06] dark:bg-white/[0.08]' : ''}`}
+                                        >
+                                          <TaskItem
+                                            task={typedTask}
+                                            showDelete={!typedTask.metadata?.isDefault}
+                                            showDirectBadge={false}
+                                            isPinned={!!typedTask.metadata?.isPinned}
+                                            onPin={
+                                              typedTask.metadata?.isDefault
+                                                ? undefined
+                                                : () => handlePinTask(typedTask)
+                                            }
+                                            onRename={
+                                              typedTask.metadata?.isDefault
+                                                ? undefined
+                                                : (n) => onRenameTask?.(typedProject, typedTask, n)
+                                            }
+                                            onDelete={
+                                              typedTask.metadata?.isDefault
+                                                ? undefined
+                                                : () => handleDeleteTask(typedProject, typedTask)
+                                            }
+                                            onArchive={
+                                              typedTask.metadata?.isDefault
+                                                ? undefined
+                                                : () => onArchiveTask?.(typedProject, typedTask)
+                                            }
+                                            primaryAction={taskHoverAction}
+                                            gitPlatform={typedProject.gitPlatform}
+                                          />
+                                        </motion.div>
+                                        {showDivider && (
+                                          <div className="mx-2 mt-1 border-b border-border/50" />
+                                        )}
+                                      </div>
                                     );
                                   }}
                                 </ReorderList>
