@@ -17,6 +17,7 @@ export const TERMINAL_PROVIDER_IDS = [
   'pi',
   'autohand',
   'forge',
+  'terminal',
 ] as const;
 
 export type TerminalProviderId = (typeof TERMINAL_PROVIDER_IDS)[number];

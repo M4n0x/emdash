@@ -268,10 +268,12 @@ const ChatInterface: React.FC<Props> = ({
   }, [task.id, task.name, task.path, projectPath, defaultBranch]);
 
   const installedAgents = useMemo(
-    () =>
-      Object.entries(agentStatuses)
+    () => [
+      'terminal',
+      ...Object.entries(agentStatuses)
         .filter(([, status]) => status.installed === true)
         .map(([id]) => id),
+    ],
     [agentStatuses]
   );
   const sortedConversations = useMemo(
@@ -786,7 +788,8 @@ const ChatInterface: React.FC<Props> = ({
   }, [agent]);
 
   useEffect(() => {
-    const installed = currentAgentStatus?.installed === true;
+    // Terminal provider has no CLI to detect — always available
+    const installed = agent === 'terminal' || currentAgentStatus?.installed === true;
     setIsAgentInstalled(installed);
   }, [agent, currentAgentStatus]);
 
@@ -799,7 +802,7 @@ const ChatInterface: React.FC<Props> = ({
       if (!statuses) return;
       setAgentStatuses(statuses);
       if (cancelled) return;
-      const installed = statuses?.[agent]?.installed === true;
+      const installed = agent === 'terminal' || statuses?.[agent]?.installed === true;
       setIsAgentInstalled(installed);
     };
 

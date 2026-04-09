@@ -134,6 +134,10 @@ export const agentInfo: Record<UiAgent, AgentInfo> = {
     description:
       'AI coding agent by Antinomy with deep Zsh integration, multi-provider support (OpenRouter, Anthropic, OpenAI), workflows, and interactive or prompt-driven modes.',
   },
+  terminal: {
+    title: 'Terminal',
+    description: 'Plain shell terminal with no AI agent. Opens your default shell directly.',
+  },
 };
 
 type Props = {
@@ -146,7 +150,9 @@ export const AgentInfoCard: React.FC<Props> = ({ id }) => {
   const logo = asset.logo;
   const brand = asset.name;
   const installCommand =
-    info.installCommand ?? getInstallCommandForProvider(id) ?? 'npm install -g @openai/codex';
+    id === 'terminal'
+      ? null
+      : (info.installCommand ?? getInstallCommandForProvider(id) ?? 'npm install -g @openai/codex');
   const [copied, setCopied] = useState(false);
   const copyResetRef = useRef<number | null>(null);
 
@@ -167,7 +173,7 @@ export const AgentInfoCard: React.FC<Props> = ({ id }) => {
       return;
     }
     try {
-      await clipboard.writeText(installCommand);
+      await clipboard.writeText(installCommand!);
       setCopied(true);
       if (copyResetRef.current !== null) {
         window.clearTimeout(copyResetRef.current);
@@ -217,34 +223,38 @@ export const AgentInfoCard: React.FC<Props> = ({ id }) => {
           </a>
         </div>
       ) : null}
-      <div className="mb-2">
-        <a
-          href="https://artificialanalysis.ai/insights/coding-agents-comparison"
-          target="_blank"
-          rel="noreferrer noopener"
-          className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-foreground hover:underline"
-        >
-          <span>Compare agents</span>
-          <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-        </a>
-      </div>
-      <div className="mb-2 flex h-7 items-center justify-between rounded-md border px-2 text-xs text-foreground">
-        <code className="max-w-[calc(100%-2.5rem)] truncate font-mono text-tiny leading-none">
-          {installCommand}
-        </code>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => {
-            void handleCopyClick();
-          }}
-          className="ml-2 text-muted-foreground"
-          aria-label={`Copy install command for ${info.title}`}
-          title={copied ? 'Copied' : 'Copy command'}
-        >
-          <CopyIndicatorIcon className="h-3.5 w-3.5" aria-hidden="true" />
-        </Button>
-      </div>
+      {id !== 'terminal' && (
+        <div className="mb-2">
+          <a
+            href="https://artificialanalysis.ai/insights/coding-agents-comparison"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-foreground hover:underline"
+          >
+            <span>Compare agents</span>
+            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </a>
+        </div>
+      )}
+      {installCommand && (
+        <div className="mb-2 flex h-7 items-center justify-between rounded-md border px-2 text-xs text-foreground">
+          <code className="max-w-[calc(100%-2.5rem)] truncate font-mono text-tiny leading-none">
+            {installCommand}
+          </code>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => {
+              void handleCopyClick();
+            }}
+            className="ml-2 text-muted-foreground"
+            aria-label={`Copy install command for ${info.title}`}
+            title={copied ? 'Copied' : 'Copy command'}
+          >
+            <CopyIndicatorIcon className="h-3.5 w-3.5" aria-hidden="true" />
+          </Button>
+        </div>
+      )}
       {info.knowledgeCutoff || info.hostingNote ? (
         <div className="mt-2 space-y-1">
           {info.knowledgeCutoff ? (

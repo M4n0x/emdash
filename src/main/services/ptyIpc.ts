@@ -1382,7 +1382,7 @@ export function registerPtyIpc(): void {
           proc = directProc;
         } else {
           const provider = getProvider(providerId as ProviderId);
-          if (!provider?.cli) {
+          if (!provider?.cli && providerId !== 'terminal') {
             return { ok: false, error: `CLI path not found for provider: ${providerId}` };
           }
           if (!shellSetup && !tmux)
@@ -1390,7 +1390,7 @@ export function registerPtyIpc(): void {
           proc = await startPty({
             id,
             cwd,
-            shell: provider.cli,
+            shell: provider?.cli || undefined,
             cols,
             rows,
             autoApprove,

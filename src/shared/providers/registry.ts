@@ -23,6 +23,7 @@ export const PROVIDER_IDS = [
   'pi',
   'autohand',
   'forge',
+  'terminal',
 ] as const;
 
 export type ProviderId = (typeof PROVIDER_IDS)[number];
@@ -380,6 +381,13 @@ export const PROVIDERS: ProviderDefinition[] = [
     initialPromptFlag: '-p',
     resumeFlag: '--conversation-id',
     icon: 'forge.svg',
+    terminalOnly: true,
+  },
+  {
+    id: 'terminal',
+    name: 'Terminal',
+    detectable: false,
+    icon: 'terminal.svg',
     terminalOnly: true,
   },
 ];
