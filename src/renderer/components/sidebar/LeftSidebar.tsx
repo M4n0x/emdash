@@ -159,10 +159,11 @@ SortModePicker.displayName = 'SortModePicker';
 // ---------------------------------------------------------------------------
 // Sorting helpers
 // ---------------------------------------------------------------------------
-/** Apply a named sort criterion to unpinned tasks. Pinned tasks always float to top. */
+/** Apply a named sort criterion to unpinned tasks. Default task first, then pinned, then rest. */
 function applySortCriterion(tasks: Task[], mode: TaskSortMode): Task[] {
-  const pinned = tasks.filter((t) => t.metadata?.isPinned);
-  const unpinned = tasks.filter((t) => !t.metadata?.isPinned);
+  const defaultTasks = tasks.filter((t) => t.metadata?.isDefault);
+  const pinned = tasks.filter((t) => t.metadata?.isPinned && !t.metadata?.isDefault);
+  const unpinned = tasks.filter((t) => !t.metadata?.isPinned && !t.metadata?.isDefault);
 
   let sortedUnpinned: Task[];
   switch (mode) {
@@ -186,13 +187,14 @@ function applySortCriterion(tasks: Task[], mode: TaskSortMode): Task[] {
       break;
   }
 
-  return [...pinned, ...sortedUnpinned];
+  return [...defaultTasks, ...pinned, ...sortedUnpinned];
 }
 
-/** Restore a saved manual order, floating any new tasks to the top. */
+/** Restore a saved manual order, floating default task to top, then new tasks. */
 function applyManualOrder(tasks: Task[], manualOrder: string[]): Task[] {
-  const pinned = tasks.filter((t) => t.metadata?.isPinned);
-  const unpinned = tasks.filter((t) => !t.metadata?.isPinned);
+  const defaultTasks = tasks.filter((t) => t.metadata?.isDefault);
+  const pinned = tasks.filter((t) => t.metadata?.isPinned && !t.metadata?.isDefault);
+  const unpinned = tasks.filter((t) => !t.metadata?.isPinned && !t.metadata?.isDefault);
   const indexMap = new Map(manualOrder.map((id, i) => [id, i]));
   const sortedUnpinned = [...unpinned].sort((a, b) => {
     const ai = indexMap.get(a.id) ?? -1;
@@ -202,7 +204,7 @@ function applyManualOrder(tasks: Task[], manualOrder: string[]): Task[] {
     if (bi === -1) return 1;
     return ai - bi;
   });
-  return [...pinned, ...sortedUnpinned];
+  return [...defaultTasks, ...pinned, ...sortedUnpinned];
 }
 
 export const LeftSidebar: React.FC<LeftSidebarProps> = ({
@@ -536,7 +538,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                               forceMount
                               className="mt-1 min-w-0 data-[state=closed]:hidden"
                             >
-                              <div className="flex min-w-0 flex-col gap-1">
+                              <div className="ml-4 flex min-w-0 flex-col gap-1">
                                 <ReorderList
                                   as="div"
                                   axis="y"
@@ -548,34 +550,57 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                                   itemClassName="min-w-0"
                                   getKey={(t) => (t as Task).id}
                                 >
-                                  {(task) => {
+                                  {(task, index) => {
                                     const typedTask = task as Task;
                                     const isActive = activeTask?.id === typedTask.id;
+                                    const isDefault = !!typedTask.metadata?.isDefault;
+                                    const nextTask = displayTasks[index + 1] as Task | undefined;
+                                    const showDivider =
+                                      isDefault && nextTask && !nextTask.metadata?.isDefault;
                                     return (
-                                      <motion.div
-                                        whileTap={{ scale: 0.97 }}
-                                        onClick={() =>
-                                          handleNavigationWithCloseSettings(() =>
-                                            onSelectTask?.(typedTask)
-                                          )
-                                        }
-                                        className={`group/task min-w-0 rounded-md py-1.5 pl-1 pr-2 hover:bg-accent ${isActive ? 'bg-black/[0.06] dark:bg-white/[0.08]' : ''}`}
-                                      >
-                                        <TaskItem
-                                          task={typedTask}
-                                          showDelete={true}
-                                          showDirectBadge={false}
-                                          isPinned={!!typedTask.metadata?.isPinned}
-                                          onPin={() => handlePinTask(typedTask)}
-                                          onRename={(n) =>
-                                            onRenameTask?.(typedProject, typedTask, n)
+                                      <div>
+                                        <motion.div
+                                          whileTap={{ scale: 0.97 }}
+                                          onClick={() =>
+                                            handleNavigationWithCloseSettings(() =>
+                                              onSelectTask?.(typedTask)
+                                            )
                                           }
-                                          onDelete={() => handleDeleteTask(typedProject, typedTask)}
-                                          onArchive={() => onArchiveTask?.(typedProject, typedTask)}
-                                          primaryAction={taskHoverAction}
-                                          gitPlatform={typedProject.gitPlatform}
-                                        />
-                                      </motion.div>
+                                          className={`group/task min-w-0 rounded-md py-1.5 pl-1 pr-2 hover:bg-accent ${isDefault && !isActive ? 'bg-black/[0.03] dark:bg-white/[0.04]' : ''} ${isActive ? 'bg-black/[0.06] dark:bg-white/[0.08]' : ''}`}
+                                        >
+                                          <TaskItem
+                                            task={typedTask}
+                                            showDelete={!typedTask.metadata?.isDefault}
+                                            showDirectBadge={false}
+                                            isPinned={!!typedTask.metadata?.isPinned}
+                                            onPin={
+                                              typedTask.metadata?.isDefault
+                                                ? undefined
+                                                : () => handlePinTask(typedTask)
+                                            }
+                                            onRename={
+                                              typedTask.metadata?.isDefault
+                                                ? undefined
+                                                : (n) => onRenameTask?.(typedProject, typedTask, n)
+                                            }
+                                            onDelete={
+                                              typedTask.metadata?.isDefault
+                                                ? undefined
+                                                : () => handleDeleteTask(typedProject, typedTask)
+                                            }
+                                            onArchive={
+                                              typedTask.metadata?.isDefault
+                                                ? undefined
+                                                : () => onArchiveTask?.(typedProject, typedTask)
+                                            }
+                                            primaryAction={taskHoverAction}
+                                            gitPlatform={typedProject.gitPlatform}
+                                          />
+                                        </motion.div>
+                                        {showDivider && (
+                                          <div className="mx-2 mt-1 border-b border-border/50" />
+                                        )}
+                                      </div>
                                     );
                                   }}
                                 </ReorderList>

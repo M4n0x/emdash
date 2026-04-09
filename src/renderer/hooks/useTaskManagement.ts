@@ -23,6 +23,7 @@ import { createTask } from '../lib/taskCreationService';
 import { useProjectManagementContext } from '../contexts/ProjectManagementProvider';
 import { useToast } from './use-toast';
 import { useModalContext } from '../contexts/ModalProvider';
+import { ensureDefaultTask } from '../lib/defaultTask';
 
 const LIFECYCLE_TEARDOWN_TIMEOUT_MS = 15000;
 type LifecycleTarget = { taskId: string; taskPath: string; label: string };
@@ -223,6 +224,35 @@ export function useTaskManagement() {
     });
     return map;
   }, [projects, taskResults]);
+
+  // Ensure each project has a default task on its default branch
+  const ensuredDefaultTaskProjectIds = useRef(new Set<string>());
+  useEffect(() => {
+    for (const project of projects) {
+      const tasks = tasksByProjectId[project.id] ?? [];
+      // Only run once per project per mount to avoid loops
+      if (ensuredDefaultTaskProjectIds.current.has(project.id)) continue;
+
+      const defaultBranch = project.gitInfo.baseRef || project.gitInfo.branch || 'main';
+      const taskToSave = ensureDefaultTask({
+        projectId: project.id,
+        projectPath: project.path,
+        defaultBranch,
+        existingTasks: tasks,
+      });
+
+      if (taskToSave) {
+        ensuredDefaultTaskProjectIds.current.add(project.id);
+        rpc.db.saveTask(taskToSave).then(() => {
+          queryClient.setQueryData<Task[]>(['tasks', project.id], (old = []) =>
+            upsertTaskInList(old, taskToSave)
+          );
+        });
+      } else {
+        ensuredDefaultTaskProjectIds.current.add(project.id);
+      }
+    }
+  }, [projects, tasksByProjectId, queryClient]);
 
   const archivedTaskResults = useQueries({
     queries: projects.map((project) => ({
@@ -642,6 +672,7 @@ export function useTaskManagement() {
       task: Task,
       options?: { silent?: boolean }
     ): Promise<boolean> => {
+      if (task.metadata?.isDefault) return false;
       if (deletingTaskIdsRef.current.has(task.id)) {
         toast({
           title: 'Deletion in progress',
@@ -730,6 +761,7 @@ export function useTaskManagement() {
       task: Task,
       options?: { silent?: boolean }
     ): Promise<boolean> => {
+      if (task.metadata?.isDefault) return false;
       if (archivingTaskIdsRef.current.has(task.id)) return false;
       try {
         await archiveTaskMutation.mutateAsync({ project: targetProject, task, options });
@@ -898,6 +930,7 @@ export function useTaskManagement() {
 
   const handleRenameTask = useCallback(
     async (targetProject: Project, task: Task, newName: string) => {
+      if (task.metadata?.isDefault) return;
       const oldBranch = task.branch;
       const sluggedName = newName
         .toLowerCase()
